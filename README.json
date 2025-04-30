@@ -1,0 +1,121 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v4.json",
+  "signals": [
+    { "name": "rowHeight", "value": 25 }
+  ],
+  "data": [
+    {
+      "name": "status_counts",
+      "values": [
+        {"key": "ServiceA", "doc_count": 100},
+        {"key": "ServiceB", "doc_count": 500},
+        {"key": "ServiceC", "doc_count": 230}
+      ],
+      "transform": [
+        {
+          "type": "collect",
+          "sort": {
+            "field": "doc_count",
+            "order": "descending"
+          }
+        }
+      ]
+    },
+    {
+      "name": "total_count",
+      "source": "status_counts",
+      "transform": [
+        {
+          "type": "aggregate",
+          "fields": ["doc_count"],
+          "ops": ["sum"],
+          "as": ["total"]
+        }
+      ]
+    },
+    {
+      "name": "with_index",
+      "source": "status_counts",
+      "transform": [
+        { "type": "window", "ops": ["row_number"], "as": ["index"] }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": { "value": 10 },
+          "y": { "value": 0 },
+          "text": { "value": "Service" },
+          "fontWeight": { "value": "bold" },
+          "fontSize": { "value": 14 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": { "value": 200 },
+          "y": { "value": 0 },
+          "text": { "value": "Percentage" },
+          "fontWeight": { "value": "bold" },
+          "fontSize": { "value": 14 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": { "value": 300 },
+          "y": { "value": 0 },
+          "text": { "value": "Count" },
+          "fontWeight": { "value": "bold" },
+          "fontSize": { "value": 14 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "with_index" },
+      "encode": {
+        "enter": {
+          "x": { "value": 10 },
+          "y": { "signal": "datum.index * rowHeight" },
+          "text": { "signal": "datum.key" },
+          "fontSize": { "value": 14 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "with_index" },
+      "encode": {
+        "enter": {
+          "x": { "value": 200 },
+          "y": { "signal": "datum.index * rowHeight" },
+          "text": {
+            "signal": "format(datum.doc_count / data('total_count')[0].total * 100, '.2f') + '%'"
+          },
+          "fontSize": { "value": 14 }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "with_index" },
+      "encode": {
+        "enter": {
+          "x": { "value": 300 },
+          "y": { "signal": "datum.index * rowHeight" },
+          "text": { "signal": "datum.doc_count" },
+          "fontSize": { "value": 14 }
+        }
+      }
+    }
+  ]
+
+}

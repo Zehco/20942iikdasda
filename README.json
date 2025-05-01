@@ -1,88 +1,68 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v4.json",
-  "title": "Team Filter with Apply Button",  // 图表标题
+  "title": "Team Filter with Apply Button",
   "signals": [
     {
-      "name": "selected_team",  // 用户选择的team
-      "value": null,  // 默认没有选择
+      "name": "selected_team",
+      "value": "",  // 默认未选择
       "bind": {
-        "input": "select",  // 使用选择框（下拉菜单）
-        "options": ["Team A", "Team B", "Team C"],  // 可选择的team列表
-        "name": "Select Team:"  // 显示的提示文本
+        "input": "select",
+        "options": ["", "Team A", "Team B", "Team C"],
+        "name": "Select Team:"
       }
     },
     {
-      "name": "team_to_svcs",  // Team到服务的映射
+      "name": "team_to_svcs",  // team 到 svc 的映射
       "value": {
-        "Team A": ["svc_a1", "svc_a2"],  // Team A对应的服务
-        "Team B": ["svc_b1", "svc_b2", "svc_b3"],  // Team B对应的服务
-        "Team C": ["svc_c1"]  // Team C对应的服务
+        "Team A": ["svc_a1", "svc_a2"],
+        "Team B": ["svc_b1", "svc_b2", "svc_b3"],
+        "Team C": ["svc_c1"]
       }
     },
     {
-      "name": "apply_clicked",  // 标记是否点击了“Apply Changes”按钮
-      "value": false,  // 初始为未点击
+      "name": "trigger_filter",  // 点击按钮后执行添加 filter 的信号
       "on": [
         {
-          "events": {"type": "click", "markname": "apply_button"},  // 点击“Apply”按钮
-          "update": "true"  // 如果点击了，更新为true
+          "events": { "type": "click", "markname": "apply_button" },
+          "update": "selected_team && team_to_svcs[selected_team] ? kibanaAddFilter('failed_svc', team_to_svcs[selected_team], true) : null"
         }
       ]
-    },
-    {
-      "name": "final_filter",  // 实际的过滤条件，依据点击按钮和选择的team来确定
-      "update": "apply_clicked && selected_team && team_to_svcs[selected_team] ? team_to_svcs[selected_team] : null"  // 如果已点击按钮且选择了team，设置过滤条件
     }
   ],
+
   "marks": [
     {
-      "name": "apply_button",  // “Apply”按钮的矩形标记
-      "type": "rect",  // 使用矩形表示按钮
+      "name": "apply_button",
+      "type": "rect",
       "encode": {
         "enter": {
-          "x": { "value": 200 },  // 按钮左上角的X坐标
-          "y": { "value": 50 },   // 按钮左上角的Y坐标
-          "width": { "value": 120 },  // 按钮宽度
-          "height": { "value": 30 },  // 按钮高度
-          "fill": { "value": "#2a74d6" },  // 按钮颜色
-          "cursor": { "value": "pointer" }  // 鼠标悬浮时显示为指针
+          "x": { "value": 250 },
+          "y": { "value": 10 },
+          "width": { "value": 120 },
+          "height": { "value": 30 },
+          "fill": { "value": "#2a74d6" },
+          "stroke": { "value": "#1f5bb5" },
+          "cursor": { "value": "pointer" }
         },
         "hover": {
-          "fill": { "value": "#1f5bb5" }  // 按钮悬浮时的颜色
+          "fill": { "value": "#1f5bb5" }
         }
       }
     },
     {
-      "type": "text",  // 显示在按钮上的文本
+      "type": "text",
       "encode": {
         "enter": {
-          "x": { "value": 260 },  // 文本X坐标
-          "y": { "value": 70 },   // 文本Y坐标
-          "align": { "value": "center" },  // 文本居中
-          "baseline": { "value": "middle" },  // 文本垂直居中
-          "text": { "value": "Apply Changes" },  // 按钮文本
-          "fill": { "value": "white" },  // 文本颜色为白色
-          "fontSize": { "value": 14 },  // 字体大小
-          "fontWeight": { "value": "bold" }  // 字体加粗
+          "x": { "value": 310 },
+          "y": { "value": 25 },
+          "align": { "value": "center" },
+          "baseline": { "value": "middle" },
+          "text": { "value": "Apply Changes" },
+          "fill": { "value": "white" },
+          "fontSize": { "value": 14 },
+          "fontWeight": { "value": "bold" }
         }
       }
-    }
-  ],
-  "data": [
-    {
-      "name": "filter",  // 用于处理过滤的data源
-      "values": [],  // 初始为空数组
-      "transform": [
-        {
-          "type": "filter",  // 过滤transform
-          "expr": "final_filter != null"  // 仅在final_filter有值时才有效
-        },
-        {
-          "type": "formula",  // 应用过滤器的公式
-          "as": "_",  // 将公式结果存储到临时字段 "_"
-          "expr": "kibanaAddFilter('failed_svc', final_filter, true)"  // 使用kibanaAddFilter函数将过滤条件添加到Dashboard
-        }
-      ]
     }
   ]
 }

@@ -1,51 +1,47 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v4.json",
-  "title": "Team Filter with Apply Button",
+  "title": "Team List",
+  "autosize": {"value": "none"},
   "signals": [
     {
       "name": "selected_team",
-      "value": "",  // 默认未选择
+      "value": "",
       "bind": {
         "input": "select",
-        "options": ["", "Team A", "Team B", "Team C"],
+        "options": ["qarth", "offer", "price"],
         "name": "Select Team:"
       }
     },
     {
-      "name": "team_to_svcs",  // team 到 svc 的映射
+      "name": "team_services",
       "value": {
-        "Team A": ["svc_a1", "svc_a2"],
-        "Team B": ["svc_b1", "svc_b2", "svc_b3"],
-        "Team C": ["svc_c1"]
+        "qarth": ["QARTH", "QarthSourceAsyncTask", "QarthV2HTTPTask", "QarthProductTask", "QarthSourceTask"],
+        "offer": ["OfferLookupBySellerOfferIdAndSellerId", "offerStoreLookupTask", "OfferService#SetupAPI", "OfferPricingStalenessService", "OfferStoreSetupTask", "OfferService#EnrichAPI", "OfferService#PublishAPI", "offerRetireValidaiton", "OfferPricingTask"],
+        "price": "PriceService#MSRPAPI"
       }
     },
     {
-      "name": "trigger_filter",  // 点击按钮后执行添加 filter 的信号
+      "name": "trigger_filter",
       "on": [
         {
           "events": { "type": "click", "markname": "apply_button" },
-          "update": "selected_team && team_to_svcs[selected_team] ? kibanaAddFilter('failed_svc', team_to_svcs[selected_team], true) : null"
+          "update": '''selected_team && team_services[selected_team] ? kibanaAddFilter({ "match": {"failed_svc": "PriceService#MSRPAPI"}}, "hl_feed") : null'''
         }
       ]
     }
   ],
-
   "marks": [
     {
       "name": "apply_button",
       "type": "rect",
       "encode": {
         "enter": {
-          "x": { "value": 250 },
-          "y": { "value": 10 },
+          "x": { "signal": "10"},
+          "y": { "signal": "height - 50"},
           "width": { "value": 120 },
           "height": { "value": 30 },
           "fill": { "value": "#2a74d6" },
-          "stroke": { "value": "#1f5bb5" },
           "cursor": { "value": "pointer" }
-        },
-        "hover": {
-          "fill": { "value": "#1f5bb5" }
         }
       }
     },
@@ -53,8 +49,8 @@
       "type": "text",
       "encode": {
         "enter": {
-          "x": { "value": 310 },
-          "y": { "value": 25 },
+          "x": { "signal": "70"},
+          "y": { "signal": "height - 35"},
           "align": { "value": "center" },
           "baseline": { "value": "middle" },
           "text": { "value": "Apply Changes" },

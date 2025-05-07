@@ -1,64 +1,109 @@
-{
-  "$schema": "https://vega.github.io/schema/vega/v4.json",
-  "title": "Team List",
-  "autosize": {"value": "none"},
-  "signals": [
-    {
-      "name": "selected_team",
-      "value": "",
-      "bind": {
-        "input": "select",
-        "options": ["qarth", "offer", "price"],
-        "name": "Select Team:"
-      }
-    },
-    {
-      "name": "team_services",
-      "value": {
-        "qarth": ["QARTH", "QarthSourceAsyncTask", "QarthV2HTTPTask", "QarthProductTask", "QarthSourceTask"],
-        "offer": ["OfferLookupBySellerOfferIdAndSellerId", "offerStoreLookupTask", "OfferService#SetupAPI", "OfferPricingStalenessService", "OfferStoreSetupTask", "OfferService#EnrichAPI", "OfferService#PublishAPI", "offerRetireValidaiton", "OfferPricingTask"],
-        "price": "PriceService#MSRPAPI"
-      }
-    },
-    {
-      "name": "trigger_filter",
-      "on": [
-        {
-          "events": { "type": "click", "markname": "apply_button" },
-          "update": '''selected_team && team_services[selected_team] ? kibanaAddFilter({ "match": {"failed_svc": "PriceService#MSRPAPI"}}, "hl_feed") : null'''
-        }
-      ]
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.solr.client.solrj.response.FacetField;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.springframework.stereotype.Service;
+
+@Service
+public class SolrDataFetcher {
+
+    private final CloudSolrClient cloudSolrClient;
+    private final String collectionName = "your_solr_collection";
+
+    public SolrDataFetcher(CloudSolrClient cloudSolrClient) {
+        this.cloudSolrClient = cloudSolrClient;
     }
-  ],
-  "marks": [
-    {
-      "name": "apply_button",
-      "type": "rect",
-      "encode": {
-        "enter": {
-          "x": { "signal": "10"},
-          "y": { "signal": "height - 50"},
-          "width": { "value": 120 },
-          "height": { "value": 30 },
-          "fill": { "value": "#2a74d6" },
-          "cursor": { "value": "pointer" }
-        }
-      }
-    },
-    {
-      "type": "text",
-      "encode": {
-        "enter": {
-          "x": { "signal": "70"},
-          "y": { "signal": "height - 35"},
-          "align": { "value": "center" },
-          "baseline": { "value": "middle" },
-          "text": { "value": "Apply Changes" },
-          "fill": { "value": "white" },
-          "fontSize": { "value": 14 },
-          "fontWeight": { "value": "bold" }
-        }
-      }
+
+    public String generateErrorReport() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime fourHoursAgo = now.minusHours(4);
+
+        LocalDateTime nowHourStart = now.withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime fourHoursAgoStart = fourHoursAgo.withMinute(0).withSecond(0).withNano(0);
+
+        DateTimeFormatter solrFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        String startTime = fourHoursAgoStart.format(solrFormatter);
+        String endTime = nowHourStart.format(solrFormatter);
+
+        return fetchAndProcessData(startTime, endTime);
     }
-  ]
+
+    private String fetchAndProcessData(String startTime, String endTime) {
+        long totalRecords = getTotalRecords(startTime, endTime);
+        Map<String, Long> failedSvcCountsByType = getFailedSvcCountsByType(startTime, endTime);
+        Map<String, Map<String, String>> reportData = calculatePercentages(totalRecords, failedSvcCountsByType);
+        return formatEmail(reportData);
+    }
+
+    private long getTotalRecords(String startTime, String endTime) {
+        SolrQuery query = new SolrQuery("*:*");
+        query.addFilterQuery("timestamp:[" + startTime + " TO " + endTime + "]");
+        query.setRows(0);
+        try {
+            QueryResponse response = cloudSolrClient.query(collectionName, query);
+            return response.getResults().getNumFound();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    private Map<String, Long> getFailedSvcCountsByType(String startTime, String endTime) {
+        Map<String, Long> failedSvcCounts = new HashMap<>();
+        SolrQuery query = new SolrQuery("failed_svc:*");
+        query.addFilterQuery("timestamp:[" + startTime + " TO " + endTime + "]");
+        query.setFacet(true);
+        query.addFacetField("item_processing_type");
+        query.setFacetMinCount(1);
+
+        try {
+            QueryResponse response = cloudSolrClient.query(collectionName, query);
+            FacetField typeFacet = response.getFacetField("item_processing_type");
+            if (typeFacet != null) {
+                for (FacetField.Count count : typeFacet.getValues()) {
+                    failedSvcCounts.put(count.getName(), count.getCount());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return failedSvcCounts;
+    }
+
+    private Map<String, Map<String, String>> calculatePercentages(long totalRecords, Map<String, Long> failedSvcCountsByType) {
+        Map<String, Map<String, String>> reportData = new HashMap<>();
+        if (totalRecords > 0) {
+            for (Map.Entry<String, Long> entry : failedSvcCountsByType.entrySet()) {
+                String type = entry.getKey();
+                long count = entry.getValue();
+                double percentage = (double) count / totalRecords * 100;
+                Map<String, String> typeData = new HashMap<>();
+                typeData.put("count", String.valueOf(count));
+                typeData.put("percentage", String.format("%.2f%%", percentage));
+                reportData.put(type, typeData);
+            }
+        }
+        return reportData;
+    }
+
+    private String formatEmail(Map<String, Map<String, String>> reportData) {
+        StringBuilder emailContent = new StringBuilder("Solr Failed Service Report (Past 4 Hours):\n\n");
+        if (reportData.isEmpty()) {
+            emailContent.append("No 'failed_svc' entries found in the specified time range.\n");
+        } else {
+            for (Map.Entry<String, Map<String, String>> entry : reportData.entrySet()) {
+                String type = entry.getKey();
+                Map<String, String> data = entry.getValue();
+                emailContent.append("Item Processing Type: ").append(type).append("\n");
+                emailContent.append("  Count: ").append(data.get("count")).append("\n");
+                emailContent.append("  Percentage of Total: ").append(data.get("percentage")).append("\n\n");
+            }
+        }
+        return emailContent.toString();
+    }
 }

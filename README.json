@@ -1,48 +1,75 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v4.json",
+  "title": "Team-wise Failed SVC Over Time",
   "width": 600,
   "height": 300,
   "padding": 5,
 
   "signals": [
     {
-      "name": "teamFilter",
-      "value": "A",
+      "name": "selectedTeam",
+      "value": "All",
       "bind": {
         "input": "select",
-        "options": ["A", "B", "C"],
-        "labels": ["Team A", "Team B", "Team C"],
-        "name": "Select team: "
+        "options": ["All", "TeamA", "TeamB"],
+        "name": "Select Team: "
       }
+    },
+    {
+      "name": "teamMap",
+      "value": {
+        "TeamA": ["svc1", "svc2"],
+        "TeamB": ["svc3", "svc4"]
+      }
+    },
+    {
+      "name": "activeFailedSvcs",
+      "update": "selectedTeam === 'All' ? null : teamMap[selectedTeam]"
     }
   ],
 
   "data": [
     {
-      "name": "raw_data",
-      "values": [
-        {"team": "A", "timestamp": "2024-05-09T00:00:00Z"},
-        {"team": "A", "timestamp": "2024-05-09T00:10:00Z"},
-        {"team": "A", "timestamp": "2024-05-09T00:50:00Z"},
-        {"team": "B", "timestamp": "2024-05-09T00:25:00Z"},
-        {"team": "B", "timestamp": "2024-05-09T01:10:00Z"},
-        {"team": "C", "timestamp": "2024-05-09T01:05:00Z"},
-        {"team": "C", "timestamp": "2024-05-09T01:20:00Z"},
-        {"team": "A", "timestamp": "2024-05-09T01:40:00Z"}
-      ],
+      "name": "raw",
+      "url": {
+        "%context%": true,
+        "%timefield%": "timestamp",
+        "index": "hi_feed",
+        "body": {
+          "size": 10000,
+          "_source": ["timestamp", "failed_svc"]
+        }
+      },
+      "format": { "property": "hits.hits" },
       "transform": [
         {
+          "type": "project",
+          "fields": ["_source.timestamp", "_source.failed_svc"],
+          "as": ["timestamp", "failed_svc"]
+        },
+        {
           "type": "filter",
-          "expr": "datum.team === teamFilter"
+          "expr": "!activeFailedSvcs || indexof(activeFailedSvcs, datum.failed_svc) >= 0"
+        },
+        {
+          "type": "formula",
+          "as": "team",
+          "expr": "selectedTeam === 'All' ? 'All' : selectedTeam"
         },
         {
           "type": "formula",
           "as": "time_bin",
-          "expr": "floor(datetime(datum.timestamp).getTime() / (30 * 60 * 1000)) * (30 * 60 * 1000)"
-        },
+          "expr": "floor(toDate(datum.timestamp).getTime() / (1000*60*30)) * (1000*60*30)"
+        }
+      ]
+    },
+    {
+      "name": "binned",
+      "source": "raw",
+      "transform": [
         {
           "type": "aggregate",
-          "groupby": ["time_bin"],
+          "groupby": ["team", "time_bin"],
           "ops": ["count"],
           "as": ["count"]
         },
@@ -57,55 +84,68 @@
 
   "scales": [
     {
-      "name": "x",
+      "name": "xscale",
       "type": "time",
-      "domain": {"data": "raw_data", "field": "time"},
-      "range": "width",
-      "nice": {"interval": "minute", "step": 30},
-      "zero": false,
-      "clamp": true
+      "domain": { "data": "binned", "field": "time" },
+      "range": "width"
     },
     {
-      "name": "y",
+      "name": "yscale",
       "type": "linear",
-      "domain": {"data": "raw_data", "field": "count"},
-      "range": "height",
+      "domain": { "data": "binned", "field": "count" },
       "nice": true,
-      "zero": true
+      "range": "height"
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": { "data": "binned", "field": "team" },
+      "range": { "scheme": "category10" }
     }
   ],
 
   "axes": [
-    {"orient": "bottom", "scale": "x", "format": "%H:%M"},
-    {"orient": "left", "scale": "y"}
+    { "orient": "bottom", "scale": "xscale", "title": "Time" },
+    { "orient": "left", "scale": "yscale", "title": "Count" }
+  ],
+
+  "legends": [
+    {
+      "fill": "color",
+      "title": "Team",
+      "orient": "right"
+    }
   ],
 
   "marks": [
     {
-      "type": "line",
-      "from": {"data": "raw_data"},
-      "encode": {
-        "enter": {
-          "x": {"scale": "x", "field": "time"},
-          "y": {"scale": "y", "field": "count"},
-          "stroke": {"value": "steelblue"},
-          "strokeWidth": {"value": 2}
+      "type": "group",
+      "from": {
+        "facet": {
+          "name": "teamFacet",
+          "data": "binned",
+          "groupby": "team"
         }
-      }
-    },
-    {
-      "type": "symbol",
-      "from": {"data": "raw_data"},
-      "encode": {
-        "enter": {
-          "x": {"scale": "x", "field": "time"},
-          "y": {"scale": "y", "field": "count"},
-          "size": {"value": 50},
-          "fill": {"value": "steelblue"}
+      },
+      "marks": [
+        {
+          "type": "line",
+          "from": { "data": "teamFacet" },
+          "encode": {
+            "enter": {
+              "x": { "scale": "xscale", "field": "time" },
+              "y": { "scale": "yscale", "field": "count" },
+              "stroke": { "scale": "color", "field": "team" },
+              "strokeWidth": { "value": 2 }
+            }
+          }
         }
-      }
+      ]
     }
   ],
 
-  "interaction": {"bind": "scales"}
+  "config": {
+    "range": { "category": { "scheme": "category10" } },
+    "mark": { "tooltip": true }
+  }
 }

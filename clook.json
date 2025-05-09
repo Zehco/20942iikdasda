@@ -1,0 +1,251 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v4.json",
+  "config": {
+    "kibana": {
+      "type": "lens",
+      "keys": ["@timestamp"]
+    }
+  },
+  
+  "signals": [
+    {
+      "name": "teamMap",
+      "value": {
+        "Team A": ["service1", "service2", "service3"],
+        "Team B": ["service4", "service5"],
+        "Team C": ["service6", "service7", "service8", "service9"],
+        "Team D": ["service10", "service11"]
+      },
+      "on": [
+        {
+          "events": "mousedown",
+          "update": "teamMap"
+        }
+      ]
+    },
+    {
+      "name": "selectedTeam",
+      "value": "All",
+      "bind": {
+        "input": "select",
+        "options": ["All", "Team A", "Team B", "Team C", "Team D"],
+        "name": "选择团队: "
+      }
+    },
+    {
+      "name": "timeInterval",
+      "value": "30m",
+      "bind": {"input": "select", "options": ["15m", "30m", "1h", "6h", "12h", "1d"], "name": "时间间隔: "}
+    },
+    {
+      "name": "zoomDomain",
+      "value": null,
+      "on": [
+        {
+          "events": {"type": "wheel", "consume": true},
+          "update": "zoomDomain || domain('x')"
+        }
+      ]
+    }
+  ],
+
+  "data": [
+    {
+      "name": "rawData",
+      "url": {
+        "%context%": true,
+        "%timefield%": "@timestamp",
+        "index": "hi_feed",
+        "body": {
+          "size": 10000,
+          "query": {
+            "bool": {
+              "must": [
+                {"range": {
+                  "@timestamp": {
+                    "gte": "%timefilter%:min%",
+                    "lte": "%timefilter%:max%",
+                    "format": "strict_date_optional_time"
+                  }
+                }},
+                {"exists": {"field": "failed_svc"}}
+              ]
+            }
+          }
+        }
+      },
+      "format": {"property": "hits.hits"}
+    },
+    {
+      "name": "processed",
+      "source": "rawData",
+      "transform": [
+        {"type": "formula", "expr": "datum._source.failed_svc", "as": "failed_svc"},
+        {"type": "formula", "expr": "datum._source['@timestamp']", "as": "timestamp"},
+        {
+          "type": "formula",
+          "expr": "datum.failed_svc",
+          "as": "failed_svc_name"
+        },
+        {
+          "type": "formula",
+          "expr": "selectedTeam === 'All' ? true : indexof(teamMap[selectedTeam], datum.failed_svc) >= 0",
+          "as": "isTeamVisible"
+        },
+        {"type": "filter", "expr": "datum.isTeamVisible"},
+        {
+          "type": "formula",
+          "expr": "selectedTeam === 'All' ? (teamMap['Team A'].indexOf(datum.failed_svc) >= 0 ? 'Team A' : (teamMap['Team B'].indexOf(datum.failed_svc) >= 0 ? 'Team B' : (teamMap['Team C'].indexOf(datum.failed_svc) >= 0 ? 'Team C' : (teamMap['Team D'].indexOf(datum.failed_svc) >= 0 ? 'Team D' : 'Other')))): selectedTeam",
+          "as": "team"
+        },
+        {
+          "type": "timeunit",
+          "field": "timestamp",
+          "units": ["30m"],
+          "signal": "timeInterval",
+          "as": "time_bucket"
+        }
+      ]
+    },
+    {
+      "name": "aggregated",
+      "source": "processed",
+      "transform": [
+        {
+          "type": "aggregate",
+          "groupby": ["time_bucket", "team"],
+          "ops": ["count"],
+          "as": ["count"]
+        },
+        {
+          "type": "collect",
+          "sort": {"field": "time_bucket"}
+        }
+      ]
+    }
+  ],
+
+  "scales": [
+    {
+      "name": "x",
+      "type": "time",
+      "domain": {"data": "aggregated", "field": "time_bucket"},
+      "range": "width",
+      "zero": false
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "domain": {"data": "aggregated", "field": "count"},
+      "range": "height",
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"data": "aggregated", "field": "team"},
+      "range": {"scheme": "category10"}
+    }
+  ],
+
+  "axes": [
+    {
+      "orient": "bottom",
+      "scale": "x",
+      "title": "时间",
+      "labelAngle": -45,
+      "labelOverlap": true,
+      "format": "%m-%d %H:%M"
+    },
+    {
+      "orient": "left",
+      "scale": "y",
+      "title": "错误数量",
+      "grid": true
+    }
+  ],
+
+  "marks": [
+    {
+      "type": "group",
+      "name": "chart",
+      "encode": {
+        "enter": {
+          "width": {"signal": "width"},
+          "height": {"signal": "height"},
+          "clip": {"value": true}
+        }
+      },
+      "marks": [
+        {
+          "type": "line",
+          "from": {"data": "aggregated"},
+          "encode": {
+            "enter": {
+              "x": {"scale": "x", "field": "time_bucket"},
+              "y": {"scale": "y", "field": "count"},
+              "stroke": {"scale": "color", "field": "team"},
+              "strokeWidth": {"value": 2},
+              "tooltip": {"signal": "{'时间': timeFormat(datum.time_bucket, '%Y-%m-%d %H:%M'), '团队': datum.team, '错误数量': datum.count}"}
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "from": {"data": "aggregated"},
+          "encode": {
+            "enter": {
+              "x": {"scale": "x", "field": "time_bucket"},
+              "y": {"scale": "y", "field": "count"},
+              "fill": {"scale": "color", "field": "team"},
+              "size": {"value": 50},
+              "tooltip": {"signal": "{'时间': timeFormat(datum.time_bucket, '%Y-%m-%d %H:%M'), '团队': datum.team, '错误数量': datum.count}"}
+            }
+          }
+        }
+      ]
+    }
+  ],
+  
+  "legends": [
+    {
+      "stroke": "color",
+      "title": "团队",
+      "encode": {
+        "symbols": {
+          "enter": {
+            "fillOpacity": {"value": 0},
+            "strokeWidth": {"value": 2}
+          }
+        }
+      }
+    }
+  ],
+  
+  "signals": [
+    {
+      "name": "drag", 
+      "value": null,
+      "on": [
+        {"events": "mousedown", "update": "down()"},
+        {"events": "window:mouseup", "update": "null"}
+      ]
+    },
+    {
+      "name": "xDown", 
+      "value": null,
+      "on": [{"events": {"signal": "drag"}, "update": "x()"}]
+    },
+    {
+      "name": "xOffset",
+      "value": 0,
+      "on": [
+        {
+          "events": {"signal": "drag"},
+          "update": "drag ? xOffset + (x() - xDown) : xOffset"
+        }
+      ]
+    }
+  ]
+}

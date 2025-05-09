@@ -1,8 +1,21 @@
 {
-  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "$schema": "https://vega.github.io/schema/vega/v4.json",
   "width": 600,
   "height": 300,
   "padding": 5,
+
+  "signals": [
+    {
+      "name": "teamFilter",
+      "value": "A",
+      "bind": {
+        "input": "select",
+        "options": ["A", "B", "C"],
+        "labels": ["Team A", "Team B", "Team C"],
+        "name": "Select team: "
+      }
+    }
+  ],
 
   "data": [
     {
@@ -19,24 +32,13 @@
       ],
       "transform": [
         {
-          "type": "formula",
-          "as": "time_bin",
-          "expr": "floor(datum.timestamp.getTime() / (30 * 60 * 1000)) * (30 * 60 * 1000)"
+          "type": "filter",
+          "expr": "datum.team === teamFilter"
         },
         {
           "type": "formula",
-          "as": "timestamp_dt",
-          "expr": "toDate(datum.timestamp)"
-        }
-      ]
-    },
-    {
-      "name": "filtered",
-      "source": "raw_data",
-      "transform": [
-        {
-          "type": "filter",
-          "expr": "datum.team == teamFilter"
+          "as": "time_bin",
+          "expr": "floor(datetime(datum.timestamp).getTime() / (30 * 60 * 1000)) * (30 * 60 * 1000)"
         },
         {
           "type": "aggregate",
@@ -53,32 +55,23 @@
     }
   ],
 
-  "signals": [
-    {
-      "name": "teamFilter",
-      "value": "A",
-      "bind": {
-        "input": "select",
-        "options": ["A", "B", "C"],
-        "labels": ["Team A", "Team B", "Team C"],
-        "name": "Select team: "
-      }
-    }
-  ],
-
   "scales": [
     {
       "name": "x",
       "type": "time",
-      "domain": {"data": "filtered", "field": "time"},
-      "range": "width"
+      "domain": {"data": "raw_data", "field": "time"},
+      "range": "width",
+      "nice": {"interval": "minute", "step": 30},
+      "zero": false,
+      "clamp": true
     },
     {
       "name": "y",
       "type": "linear",
-      "domain": {"data": "filtered", "field": "count"},
+      "domain": {"data": "raw_data", "field": "count"},
+      "range": "height",
       "nice": true,
-      "range": "height"
+      "zero": true
     }
   ],
 
@@ -90,7 +83,7 @@
   "marks": [
     {
       "type": "line",
-      "from": {"data": "filtered"},
+      "from": {"data": "raw_data"},
       "encode": {
         "enter": {
           "x": {"scale": "x", "field": "time"},
@@ -102,15 +95,17 @@
     },
     {
       "type": "symbol",
-      "from": {"data": "filtered"},
+      "from": {"data": "raw_data"},
       "encode": {
         "enter": {
           "x": {"scale": "x", "field": "time"},
           "y": {"scale": "y", "field": "count"},
-          "fill": {"value": "steelblue"},
-          "size": {"value": 50}
+          "size": {"value": 50},
+          "fill": {"value": "steelblue"}
         }
       }
     }
-  ]
+  ],
+
+  "interaction": {"bind": "scales"}
 }

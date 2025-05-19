@@ -1,151 +1,324 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v4.json",
-  "title": "Team-wise Failed SVC Over Time",
-  "width": 600,
   "height": 300,
-  "padding": 5,
-
+  "width": 800,
   "signals": [
+    {"name": "rowHeight", "value": 25},
     {
       "name": "selectedTeam",
-      "value": "All",
+      "value": "qarth",
       "bind": {
         "input": "select",
-        "options": ["All", "TeamA", "TeamB"],
+        "options": ["qarth", "offer", "price", "limo", "oscar", "prs", "iqs", "gatekeeper"],
         "name": "Select Team: "
       }
     },
     {
-      "name": "teamMap",
+      "name": "team_services",
       "value": {
-        "TeamA": ["svc1", "svc2"],
-        "TeamB": ["svc3", "svc4"]
+        "qarth": ["QARTH", "QarthSourceAsyncTask", "QarthV2HTTPTask", "QarthProductTask", "QarthSourceTask", "MPQarthTask"],
+        "offer": ["OfferLookupBySellerOfferIdAndSellerId", "offerStoreLookupTask", "OfferService#SetupAPI", "OfferPricingStalenessService", "OfferStoreSetupTask", "OfferService#EnrichAPI", "OfferService#PublishAPI", "offerRetireValidaiton", "OfferPricingTask", "GranularOfferPublishEventTask", "UberKeysOfferResolutionTask", "OmniItemCreateOfferSetup"],
+        "price": ["PriceService#CrtAPI", "PriceService#INTLCrtAPI", "PromoPriceTask", "PriceService#MSRPAPI", 
+            "GMPPrice", "PriceService#PricingAPI", "PromoPricePromoEngineAsync", "MpItemPriceSetupBYOTV2"],
+        "limo":["LIMO_VALIDATION_SERVICE,ASSET_VALIDATOR", "LimoKafkaTask", "MpLimoTask", "LimoService", "OmniItemCreateLimo"],
+        "oscar":["ShipPriceService#OSCARAPI"],
+        "prs":["PRS_GTIN_LAGTIME_SERVICE", "MATCHING,PRS_GTIN_LAGTIME_SERVICE"],
+        "iqs":["repricerEligibilityIQSTask", "IQS", "IqsOfferWFSEligibilityTask", "mpItemSetupByMatchIQSHTTPTask", "IQSService"],
+        "gatekeeper":["GatekeeperService", "OmniItemCreateGateKeeperV2"]
       }
     },
-    {
-      "name": "activeFailedSvcs",
-      "update": "selectedTeam === 'All' ? null : teamMap[selectedTeam]"
-    }
+    {"name": "filteredFailedSvc", "update": "team_services[selectedTeam]"}
   ],
-
   "data": [
     {
-      "name": "raw",
-      "url": {
-        "%context%": true,
-        "%timefield%": "timestamp",
-        "index": "hi_feed",
-        "body": {
-          "size": 10000,
-          "_source": ["timestamp", "failed_svc"]
-        }
-      },
-      "format": { "property": "hits.hits" },
-      "transform": [
+      "name": "raw_data",
+      "values": [
         {
-          "type": "project",
-          "fields": ["_source.timestamp", "_source.failed_svc"],
-          "as": ["timestamp", "failed_svc"]
-        },
-        {
-          "type": "filter",
-          "expr": "!activeFailedSvcs || indexof(activeFailedSvcs, datum.failed_svc) >= 0"
-        },
-        {
-          "type": "formula",
-          "as": "team",
-          "expr": "selectedTeam === 'All' ? 'All' : selectedTeam"
-        },
-        {
-          "type": "formula",
-          "as": "time_bin",
-          "expr": "floor(toDate(datum.timestamp).getTime() / (1000*60*30)) * (1000*60*30)"
-        }
-      ]
-    },
-    {
-      "name": "binned",
-      "source": "raw",
-      "transform": [
-        {
-          "type": "aggregate",
-          "groupby": ["team", "time_bin"],
-          "ops": ["count"],
-          "as": ["count"]
-        },
-        {
-          "type": "formula",
-          "as": "time",
-          "expr": "toDate(datum.time_bin)"
-        }
-      ]
-    }
-  ],
-
-  "scales": [
-    {
-      "name": "xscale",
-      "type": "time",
-      "domain": { "data": "binned", "field": "time" },
-      "range": "width"
-    },
-    {
-      "name": "yscale",
-      "type": "linear",
-      "domain": { "data": "binned", "field": "count" },
-      "nice": true,
-      "range": "height"
-    },
-    {
-      "name": "color",
-      "type": "ordinal",
-      "domain": { "data": "binned", "field": "team" },
-      "range": { "scheme": "category10" }
-    }
-  ],
-
-  "axes": [
-    { "orient": "bottom", "scale": "xscale", "title": "Time" },
-    { "orient": "left", "scale": "yscale", "title": "Count" }
-  ],
-
-  "legends": [
-    {
-      "fill": "color",
-      "title": "Team",
-      "orient": "right"
-    }
-  ],
-
-  "marks": [
-    {
-      "type": "group",
-      "from": {
-        "facet": {
-          "name": "teamFacet",
-          "data": "binned",
-          "groupby": "team"
-        }
-      },
-      "marks": [
-        {
-          "type": "line",
-          "from": { "data": "teamFacet" },
-          "encode": {
-            "enter": {
-              "x": { "scale": "xscale", "field": "time" },
-              "y": { "scale": "yscale", "field": "count" },
-              "stroke": { "scale": "color", "field": "team" },
-              "strokeWidth": { "value": 2 }
+          "took": 2088,
+          "timed_out": false,
+          "_shards": {
+            "total": 57,
+            "successful": 57,
+            "skipped": 0,
+            "failed": 0
+          },
+          "hits": {
+            "total": {
+              "value": 10000,
+              "relation": "gte"
+            },
+            "max_score": null,
+            "hits": []
+          },
+          "aggregations": {
+            "by_item_processing_status": {
+              "doc_count_error_upper_bound": 0,
+              "sum_other_doc_count": 0,
+              "buckets": [
+                {
+                  "key": "DATA_ERROR",
+                  "doc_count": 247569022,
+                  "by_failed_svc": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "OfferLookupBySellerOfferIdAndSellerId",
+                        "doc_count": 197009395
+                      },
+                      {
+                        "key": "offerStoreLookupTask",
+                        "doc_count": 30734834
+                      },
+                      {
+                        "key": "LimoKafkaTask",
+                        "doc_count": 10939270
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key": "SYSTEM_ERROR",
+                  "doc_count": 447833,
+                  "by_failed_svc": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "OfferPricingStalenessService",
+                        "doc_count": 350798
+                      },
+                      {
+                        "key": "LimoKafkaTask",
+                        "doc_count": 34526
+                      },
+                      {
+                        "key": "OfferLookupBySellerOfferIdAndSellerId",
+                        "doc_count": 22987
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key": "TIMEOUT_ERROR",
+                  "doc_count": 8945,
+                  "by_failed_svc": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "OfferLookupBySellerOfferIdAndSellerId",
+                        "doc_count": 5262
+                      },
+                      {
+                        "key": "QARTH",
+                        "doc_count": 2767
+                      },
+                      {
+                        "key": "OmniItemCreateGateKeeperV2",
+                        "doc_count": 687
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key": "INPROGRESS",
+                  "doc_count": 477,
+                  "by_failed_svc": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "QARTH",
+                        "doc_count": 297
+                      },
+                      {
+                        "key": "OfferService#SetupAPI",
+                        "doc_count": 87
+                      },
+                      {
+                        "key": "QarthSourceAsyncTask",
+                        "doc_count": 47
+                      }
+                    ]
+                  }
+                }
+              ]
             }
           }
         }
+      ],
+      "format": {
+        "type": "json", 
+        "property": "0.aggregations.by_item_processing_status.buckets"
+      },
+      "transform": [
+        {
+          "type": "flatten",
+          "fields": ["by_failed_svc.buckets"],
+          "as": ["service_bucket"]
+        },
+        {
+          "type": "formula",
+          "expr": "datum.key",
+          "as": "status"
+        },
+        {
+          "type": "formula",
+          "expr": "datum.service_bucket.key",
+          "as": "service_name"
+        },
+        {
+          "type": "formula",
+          "expr": "datum.service_bucket.doc_count",
+          "as": "service_count"
+        },
+        {
+          "type": "filter",
+          "expr": "indexof(filteredFailedSvc, datum.service_name) !== -1"
+        },
+        {
+          "type": "aggregate",
+          "groupby": ["status"],
+          "ops": ["sum"],
+          "fields": ["service_count"],
+          "as": ["total_count"]
+        }
+      ]
+    },
+    {
+      "name": "percentage_table",
+      "source": "raw_data",
+      "transform": [
+        {
+          "type": "joinaggregate",
+          "fields": ["total_count"],
+          "as": ["v"],
+          "ops": ["sum"]
+        },
+        {"type": "window", "ops": ["row_number"], "as": ["index"]},
+        {
+          "type": "formula",
+          "as": "percentage_str",
+          "expr": "format((datum.total_count / datum.v) * 100, '.4f') + '%'"
+        }
       ]
     }
   ],
-
-  "config": {
-    "range": { "category": { "scheme": "category10" } },
-    "mark": { "tooltip": true }
-  }
+  "marks": [
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 10
+          },
+          "y": {
+            "value": 0
+          },
+          "text": {
+            "value": "Item Process Status"
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fontSize": {
+            "value": 14
+          },
+          "fill": {
+            "value": "#00ccff"
+          }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 200
+          },
+          "y": {
+            "value": 0
+          },
+          "text": {
+            "value": "Percentage"
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fontSize": {
+            "value": 14
+          },
+          "fill": {
+            "value": "#00ccff"
+          }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {
+            "value": 300
+          },
+          "y": {
+            "value": 0
+          },
+          "text": {
+            "value": "Count"
+          },
+          "fontWeight": {
+            "value": "bold"
+          },
+          "fontSize": {
+            "value": 14
+          },
+          "fill": {
+            "value": "#00ccff"
+          }
+        }
+      }
+    },
+    {
+    "type": "text",
+    "from": { "data": "percentage_table" },
+    "encode": {
+      "update": {
+        "x": { "value": 10 },
+        "y": { "signal": "datum.index * rowHeight" },
+        "text": { "signal": "datum.status" },
+        "fontSize": { "value": 14 },
+        "fill": { "value": "#00ccff" }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "percentage_table" },
+      "encode": {
+        "update": {
+          "x": { "value": 200 },
+          "y": { "signal": "datum.index * rowHeight" },
+          "text": { "signal": "datum.percentage_str" },
+          "fontSize": { "value": 14 },
+          "fill": { "value": "#00ccff" }
+        }
+      }
+    },
+    {
+      "type": "text",
+      "from": { "data": "percentage_table" },
+      "encode": {
+        "update": {
+          "x": { "value": 300 },
+          "y": { "signal": "datum.index * rowHeight" },
+          "text": { "signal": "datum.total_count" },
+          "fontSize": { "value": 14 },
+          "fill": { "value": "#00ccff" }
+        }
+      }
+    }
+  ]
 }

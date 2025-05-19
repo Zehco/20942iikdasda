@@ -1,40 +1,37 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v4.json",
+  "width": 900,
   "height": 300,
-  "width": 800,
+  "padding": 5,
   "signals": [
-    {"name": "rowHeight", "value": 25},
     {
       "name": "selectedTeam",
       "value": "qarth",
       "bind": {
         "input": "select",
-        "options": ["qarth", "offer", "price", "limo", "oscar", "prs", "iqs", "gatekeeper"],
+        "options": ["qarth", "offer"],
         "name": "Select Team: "
       }
     },
     {
       "name": "team_services",
       "value": {
-        "qarth": ["QARTH", "QarthSourceAsyncTask", "QarthV2HTTPTask", "QarthProductTask", "QarthSourceTask", "MPQarthTask"],
-        "offer": ["OfferLookupBySellerOfferIdAndSellerId", "offerStoreLookupTask", "OfferService#SetupAPI", "OfferPricingStalenessService", "OfferStoreSetupTask", "OfferService#EnrichAPI", "OfferService#PublishAPI", "offerRetireValidaiton", "OfferPricingTask", "GranularOfferPublishEventTask", "UberKeysOfferResolutionTask", "OmniItemCreateOfferSetup"],
-        "price": ["PriceService#CrtAPI", "PriceService#INTLCrtAPI", "PromoPriceTask", "PriceService#MSRPAPI", 
-            "GMPPrice", "PriceService#PricingAPI", "PromoPricePromoEngineAsync", "MpItemPriceSetupBYOTV2"],
-        "limo":["LIMO_VALIDATION_SERVICE,ASSET_VALIDATOR", "LimoKafkaTask", "MpLimoTask", "LimoService", "OmniItemCreateLimo"],
-        "oscar":["ShipPriceService#OSCARAPI"],
-        "prs":["PRS_GTIN_LAGTIME_SERVICE", "MATCHING,PRS_GTIN_LAGTIME_SERVICE"],
-        "iqs":["repricerEligibilityIQSTask", "IQS", "IqsOfferWFSEligibilityTask", "mpItemSetupByMatchIQSHTTPTask", "IQSService"],
-        "gatekeeper":["GatekeeperService", "OmniItemCreateGateKeeperV2"]
+        "qarth": ["QARTH"],
+        "offer": ["OfferService"]
       }
     },
-    {"name": "filteredFailedSvc", "update": "team_services[selectedTeam]"}
+    {
+      "name": "filteredFailedSvc",
+      "update": "team_services[selectedTeam]"
+    }
   ],
+
   "data": [
     {
-      "name": "raw_data",
+      "name": "raw",
       "values": [
         {
-          "took": 2088,
+          "took": 6851,
           "timed_out": false,
           "_shards": {
             "total": 57,
@@ -51,94 +48,252 @@
             "hits": []
           },
           "aggregations": {
-            "by_item_processing_status": {
-              "doc_count_error_upper_bound": 0,
-              "sum_other_doc_count": 0,
+            "by_time": {
               "buckets": [
                 {
-                  "key": "DATA_ERROR",
-                  "doc_count": 247569022,
-                  "by_failed_svc": {
+                  "key_as_string": "2025-05-15T00:00:00.000Z",
+                  "key": 1747267200000,
+                  "doc_count": 2316309,
+                  "status_svc_combo": {
                     "doc_count_error_upper_bound": 0,
                     "sum_other_doc_count": 0,
                     "buckets": [
                       {
-                        "key": "OfferLookupBySellerOfferIdAndSellerId",
-                        "doc_count": 197009395
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 1722195
                       },
                       {
-                        "key": "offerStoreLookupTask",
-                        "doc_count": 30734834
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 284133
                       },
                       {
-                        "key": "LimoKafkaTask",
-                        "doc_count": 10939270
+                        "key": "DATA_ERROR,LimoKafkaTask",
+                        "doc_count": 212944
                       }
                     ]
                   }
                 },
                 {
-                  "key": "SYSTEM_ERROR",
-                  "doc_count": 447833,
-                  "by_failed_svc": {
+                  "key_as_string": "2025-05-15T01:00:00.000Z",
+                  "key": 1747270800000,
+                  "doc_count": 2553483,
+                  "status_svc_combo": {
                     "doc_count_error_upper_bound": 0,
                     "sum_other_doc_count": 0,
                     "buckets": [
                       {
-                        "key": "OfferPricingStalenessService",
-                        "doc_count": 350798
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 2070429
                       },
                       {
-                        "key": "LimoKafkaTask",
-                        "doc_count": 34526
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 272231
                       },
                       {
-                        "key": "OfferLookupBySellerOfferIdAndSellerId",
-                        "doc_count": 22987
+                        "key": "DATA_ERROR,LimoKafkaTask",
+                        "doc_count": 116870
                       }
                     ]
                   }
                 },
                 {
-                  "key": "TIMEOUT_ERROR",
-                  "doc_count": 8945,
-                  "by_failed_svc": {
+                  "key_as_string": "2025-05-15T02:00:00.000Z",
+                  "key": 1747274400000,
+                  "doc_count": 2884083,
+                  "status_svc_combo": {
                     "doc_count_error_upper_bound": 0,
                     "sum_other_doc_count": 0,
                     "buckets": [
                       {
-                        "key": "OfferLookupBySellerOfferIdAndSellerId",
-                        "doc_count": 5262
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 2273435
                       },
                       {
-                        "key": "QARTH",
-                        "doc_count": 2767
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 300973
                       },
                       {
-                        "key": "OmniItemCreateGateKeeperV2",
-                        "doc_count": 687
+                        "key": "DATA_ERROR,LimoKafkaTask",
+                        "doc_count": 122222
                       }
                     ]
                   }
                 },
                 {
-                  "key": "INPROGRESS",
-                  "doc_count": 477,
-                  "by_failed_svc": {
+                  "key_as_string": "2025-05-15T03:00:00.000Z",
+                  "key": 1747278000000,
+                  "doc_count": 2986619,
+                  "status_svc_combo": {
                     "doc_count_error_upper_bound": 0,
                     "sum_other_doc_count": 0,
                     "buckets": [
                       {
-                        "key": "QARTH",
-                        "doc_count": 297
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 2428374
                       },
                       {
-                        "key": "OfferService#SetupAPI",
-                        "doc_count": 87
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 361591
                       },
                       {
-                        "key": "QarthSourceAsyncTask",
-                        "doc_count": 47
+                        "key": "DATA_ERROR,UberKeysOfferResolutionTask",
+                        "doc_count": 18843
+                      },
+                      {
+                        "key": "DATA_ERROR,QarthSourceAsyncTask",
+                        "doc_count": 14878
+                      },
+                      {
+                        "key": "DATA_ERROR,PriceService#MSRPAPI",
+                        "doc_count": 9822
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key_as_string": "2025-05-15T04:00:00.000Z",
+                  "key": 1747281600000,
+                  "doc_count": 2759794,
+                  "status_svc_combo": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 2301021
+                      },
+                      {
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 293586
+                      },
+                      {
+                        "key": "DATA_ERROR,repricerEligibilityIQSTask",
+                        "doc_count": 19105
+                      },
+                      {
+                        "key": "DATA_ERROR,QarthSourceAsyncTask",
+                        "doc_count": 15636
+                      },
+                      {
+                        "key": "DATA_ERROR,UberKeysOfferResolutionTask",
+                        "doc_count": 15550
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key_as_string": "2025-05-15T05:00:00.000Z",
+                  "key": 1747285200000,
+                  "doc_count": 2503695,
+                  "status_svc_combo": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 2007178
+                      },
+                      {
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 297344
+                      },
+                      {
+                        "key": "DATA_ERROR,LimoKafkaTask",
+                        "doc_count": 118794
+                      },
+                      {
+                        "key": "DATA_ERROR,PromoPriceTask",
+                        "doc_count": 17597
+                      },
+                      {
+                        "key": "DATA_ERROR,repricerEligibilityIQSTask",
+                        "doc_count": 15583
+                      },
+                      {
+                        "key": "DATA_ERROR,UberKeysOfferResolutionTask",
+                        "doc_count": 14165
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key_as_string": "2025-05-15T06:00:00.000Z",
+                  "key": 1747288800000,
+                  "doc_count": 2838257,
+                  "status_svc_combo": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 2265915
+                      },
+                      {
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 314180
+                      },
+                      {
+                        "key": "DATA_ERROR,LimoKafkaTask",
+                        "doc_count": 105461
+                      },
+                      {
+                        "key": "DATA_ERROR,PromoPriceTask",
+                        "doc_count": 75971
+                      },
+                      {
+                        "key": "DATA_ERROR,repricerEligibilityIQSTask",
+                        "doc_count": 24451
+                      },
+                      {
+                        "key": "DATA_ERROR,QarthSourceAsyncTask",
+                        "doc_count": 13467
+                      },
+                      {
+                        "key": "DATA_ERROR,UberKeysOfferResolutionTask",
+                        "doc_count": 13437
+                      }
+                    ]
+                  }
+                },
+                {
+                  "key_as_string": "2025-05-15T07:00:00.000Z",
+                  "key": 1747292400000,
+                  "doc_count": 2501238,
+                  "status_svc_combo": {
+                    "doc_count_error_upper_bound": 0,
+                    "sum_other_doc_count": 0,
+                    "buckets": [
+                      {
+                        "key": "DATA_ERROR,QARTH",
+                        "doc_count": 2018784
+                      },
+                      {
+                        "key": "SYSTEM_ERROR,QARTH",
+                        "doc_count": 250944
+                      },
+                      {
+                        "key": "DATA_ERROR,LimoKafkaTask",
+                        "doc_count": 141179
+                      },
+                      {
+                        "key": "DATA_ERROR,UberKeysOfferResolutionTask",
+                        "doc_count": 18751
+                      },
+                      {
+                        "key": "DATA_ERROR,QarthSourceAsyncTask",
+                        "doc_count": 17354
+                      },
+                      {
+                        "key": "DATA_ERROR,OfferService#SetupAPI",
+                        "doc_count": 16129
+                      },
+                      {
+                        "key": "DATA_ERROR,repricerEligibilityIQSTask",
+                        "doc_count": 15921
+                      },
+                      {
+                        "key": "DATA_ERROR,PriceService#MSRPAPI",
+                        "doc_count": 8368
                       }
                     ]
                   }
@@ -150,175 +305,116 @@
       ],
       "format": {
         "type": "json", 
-        "property": "0.aggregations.by_item_processing_status.buckets"
-      },
+        "property": "0.aggregations.by_time.buckets"
+      }
+    },
+    {
+      "name": "flattened",
+      "source": "raw",
       "transform": [
         {
           "type": "flatten",
-          "fields": ["by_failed_svc.buckets"],
-          "as": ["service_bucket"]
+          "fields": ["status_svc_combo.buckets"],
+          "as": ["failed_svc"]
+        },
+        {
+          "type": "project",
+          "fields": ["key_as_string", "failed_svc"],
+          "as": ["time_bucket", "failed_svc"]
+        },
+        {
+          "type": "project",
+          "fields": ["time_bucket", "failed_svc.key", "failed_svc.doc_count"],
+          "as": ["time_bucket", "key", "count"]
         },
         {
           "type": "formula",
-          "expr": "datum.key",
-          "as": "status"
+          "as": "keyParts",
+          "expr": "split(datum.key, ',')"
         },
         {
           "type": "formula",
-          "expr": "datum.service_bucket.key",
-          "as": "service_name"
+          "as": "status",
+          "expr": "datum.keyParts[0]"
         },
         {
           "type": "formula",
-          "expr": "datum.service_bucket.doc_count",
-          "as": "service_count"
+          "as": "service",
+          "expr": "datum.keyParts[1]"
+        },
+        {
+          "type": "project",
+          "fields": ["time_bucket", "count", "status", "service"]
         },
         {
           "type": "filter",
-          "expr": "indexof(filteredFailedSvc, datum.service_name) !== -1"
+          "expr": "indexof(filteredFailedSvc, datum.service) !== -1"
         },
-        {
-          "type": "aggregate",
-          "groupby": ["status"],
-          "ops": ["sum"],
-          "fields": ["service_count"],
-          "as": ["total_count"]
-        }
-      ]
-    },
-    {
-      "name": "percentage_table",
-      "source": "raw_data",
-      "transform": [
-        {
-          "type": "joinaggregate",
-          "fields": ["total_count"],
-          "as": ["v"],
-          "ops": ["sum"]
-        },
-        {"type": "window", "ops": ["row_number"], "as": ["index"]},
         {
           "type": "formula",
-          "as": "percentage_str",
-          "expr": "format((datum.total_count / datum.v) * 100, '.4f') + '%'"
+          "expr": "substring(datum.time_bucket, 5, 10) + \" \" + substring(datum.time_bucket, 11, 13) + \"h\"",
+          "as": "formattedDate"
         }
       ]
     }
   ],
+  "scales": [
+    {
+      "name": "x",
+      "type": "point",
+      "range": "width",
+      "domain": {"data": "flattened", "field": "formattedDate"}
+    },
+    {
+      "name": "y",
+      "type": "linear",
+      "range": "height",
+      "nice": true,
+      "zero": true,
+      "domain": {"data": "flattened", "field": "count"}
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "range": "category",
+      "domain": {"data": "flattened", "field": "status"}
+    }
+  ],
+  "legends": [
+    {
+      "fill": "color",
+      "title": "Item Process Status",
+      "orient": "right"
+    }
+  ],
+  "axes": [
+    {"orient": "bottom", "scale": "x", "title": "modified_dtm","labelFontSize": 14, "titleFontSize": 16},
+    {"orient": "left", "scale": "y", "title": "count", "tickCount": 10, "labelFontSize": 14, "titleFontSize": 16}
+  ],
   "marks": [
     {
-      "type": "text",
-      "encode": {
-        "enter": {
-          "x": {
-            "value": 10
-          },
-          "y": {
-            "value": 0
-          },
-          "text": {
-            "value": "Item Process Status"
-          },
-          "fontWeight": {
-            "value": "bold"
-          },
-          "fontSize": {
-            "value": 14
-          },
-          "fill": {
-            "value": "#00ccff"
+      "type": "group",
+      "from": {
+        "facet": {
+          "name": "series",
+          "data": "flattened",
+          "groupby": "status"
+        }
+      },
+      "marks": [
+        {
+          "type": "line",
+          "from": {"data": "series"},
+          "encode": {
+            "enter": {
+              "x": {"scale": "x", "field": "formattedDate"},
+              "y": {"scale": "y", "field": "count"},
+              "stroke": {"scale": "color", "field": "status"},
+              "strokeWidth": {"value": 2}
+            }
           }
         }
-      }
-    },
-    {
-      "type": "text",
-      "encode": {
-        "enter": {
-          "x": {
-            "value": 200
-          },
-          "y": {
-            "value": 0
-          },
-          "text": {
-            "value": "Percentage"
-          },
-          "fontWeight": {
-            "value": "bold"
-          },
-          "fontSize": {
-            "value": 14
-          },
-          "fill": {
-            "value": "#00ccff"
-          }
-        }
-      }
-    },
-    {
-      "type": "text",
-      "encode": {
-        "enter": {
-          "x": {
-            "value": 300
-          },
-          "y": {
-            "value": 0
-          },
-          "text": {
-            "value": "Count"
-          },
-          "fontWeight": {
-            "value": "bold"
-          },
-          "fontSize": {
-            "value": 14
-          },
-          "fill": {
-            "value": "#00ccff"
-          }
-        }
-      }
-    },
-    {
-    "type": "text",
-    "from": { "data": "percentage_table" },
-    "encode": {
-      "update": {
-        "x": { "value": 10 },
-        "y": { "signal": "datum.index * rowHeight" },
-        "text": { "signal": "datum.status" },
-        "fontSize": { "value": 14 },
-        "fill": { "value": "#00ccff" }
-        }
-      }
-    },
-    {
-      "type": "text",
-      "from": { "data": "percentage_table" },
-      "encode": {
-        "update": {
-          "x": { "value": 200 },
-          "y": { "signal": "datum.index * rowHeight" },
-          "text": { "signal": "datum.percentage_str" },
-          "fontSize": { "value": 14 },
-          "fill": { "value": "#00ccff" }
-        }
-      }
-    },
-    {
-      "type": "text",
-      "from": { "data": "percentage_table" },
-      "encode": {
-        "update": {
-          "x": { "value": 300 },
-          "y": { "signal": "datum.index * rowHeight" },
-          "text": { "signal": "datum.total_count" },
-          "fontSize": { "value": 14 },
-          "fill": { "value": "#00ccff" }
-        }
-      }
+      ]
     }
   ]
 }

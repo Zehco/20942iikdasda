@@ -1,8 +1,12 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v4.json",
-  "width": 900,
   "height": 300,
-  "padding": 5,
+  "padding": {
+    "top": 40,
+    "left": 20,
+    "right": 20,
+    "bottom": 30
+  },
   "signals": [
     {
       "name": "selectedTeam",
@@ -27,7 +31,16 @@
         "gatekeeper":["GatekeeperService", "OmniItemCreateGateKeeperV2"]
       }
     },
-    {"name": "filteredFailedSvc", "update": "team_services[selectedTeam]"}
+    {"name": "filteredFailedSvc", "update": "team_services[selectedTeam]"},
+    {
+      "name": "tooltip",
+      "value": {},
+      "on": [
+        {"events": "symbol:mouseover", "update": "datum"},
+        {"events": "symbol:mouseout", "update": "{}"}
+      ]
+    },
+    {"name": "width", "value": 800}
   ],
   "data": [
     {
@@ -425,6 +438,44 @@
               "y": {"scale": "y", "field": "total_count"},
               "stroke": {"scale": "color", "field": "service"},
               "strokeWidth": {"value": 2}
+            }
+          }
+        },
+        {
+          "type": "symbol",
+          "from": {"data": "series"},
+          "encode": {
+            "enter": {
+              "x": {"scale": "x", "field": "formattedDate"},
+              "y": {"scale": "y", "field": "total_count"},
+              "size": {"value": 50},
+              "fill": {"value": "steelblue"}
+            },
+            "update": {
+              "fillOpacity": {"value": 1}
+            },
+            "hover": {
+              "fillOpacity": {"value": 0.3}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "enter": {
+              "fill": {"value": "#333"},
+              "fontSize": {"value": 12},
+              "align": {"value": "center"},
+              "baseline": {"value": "bottom"}
+            },
+            "update": {
+              "x": {"scale": "x", "signal": "tooltip.formattedDate"},
+              "y": {"scale": "y", "signal": "tooltip.total_count", "offset": -10},
+              "text": {"signal": "'Date: ' + tooltip.formattedDate + ', Value: ' + format(tooltip.total_count, ',')"},
+              "fillOpacity": [
+                {"test": "tooltip.total_count != null", "value": 1},
+                {"value": 0}
+              ]
             }
           }
         }
